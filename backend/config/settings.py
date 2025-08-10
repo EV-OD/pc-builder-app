@@ -11,21 +11,27 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-n-tx-a@f1wu7wzn!q(l!eo$#)a^gztic3yys96=dfaarvyt2-l'
+SECRET_KEY = 'dev-secret-key-default'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+    'pc-builder-app-production.up.railway.app',
+    '.railway.app',
+]
 
 
 # Application definition
@@ -37,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
+    'rest_framework_simplejwt.token_blacklist',
     'pcbuilder',
     'rest_framework', 
 ]
@@ -62,9 +70,10 @@ REST_FRAMEWORK = {
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -93,21 +102,24 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'dbms_project',      # database name you just created
+#         'USER': 'postgres',          # PostgreSQL user
+#         'PASSWORD': '123',           # password you enter in pgAdmin
+#         'HOST': 'localhost',         # or '127.0.0.1'
+#         'PORT': '5432',               # PostgreSQL default port
+#     }
+# }
+
+# Use a single remote database (Railway public connection URL)
 DATABASES = {
-    'default': {
-        # 'ENGINE': 'django.db.backends.postgresql',
-        # 'NAME': 'dbms_project',      # database name you just created
-        # 'USER': 'postgres',          # PostgreSQL user
-        # 'PASSWORD': '123',           # password you enter in pgAdmin
-        # 'HOST': 'localhost',         # or '127.0.0.1'
-        # 'PORT': '5432',               # PostgreSQL default port
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dbms_project',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',
-        'PORT': '3306',
-    }
+    'default': dj_database_url.parse(
+        'postgresql://postgres:vmAiMRqvtjkmQixFWmozoGrpTXJgpYvH@metro.proxy.rlwy.net:48137/railway?sslmode=require',
+        conn_max_age=600,
+        ssl_require=True,
+    )
 }
 
 
@@ -145,7 +157,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'  
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Honor X-Forwarded-Proto/SSL when behind Railway proxy
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -165,3 +181,8 @@ LOGIN_REDIRECT_URL = '/api/v1/'
 
 # Add CORS settings
 CORS_ALLOW_ALL_ORIGINS = True
+
+# CSRF for hosted frontend and Railway domains
+CSRF_TRUSTED_ORIGINS = [
+    'https://pc-builder-app-production.up.railway.app',
+]
